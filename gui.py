@@ -18,7 +18,7 @@ options.headless = True
 options.add_argument("--window-size=1920,1200")
 driver = webdriver.Chrome(options=options)
 
-# determines all fonts in the game (apart from jeopardy board)
+# determines all fonts in the game (apart from jeopardy board which is pre set)
 gameFont = ('Verdana',22)
 
 # implement our own style for windows to match jeopardy color scheme
@@ -31,9 +31,10 @@ sg.LOOK_AND_FEEL_TABLE['Jeopardy'] = {'BACKGROUND': '#151680',
                                         'PROGRESS': ('#01826B', '#D0D0D0'),
                                         'BORDER': 1, 'SLIDER_DEPTH': 0, 'PROGRESS_DEPTH': 0,
                                         }
+# set theme to what we created
 sg.theme('Jeopardy')
 
-# checks that user input is an integer >= 0
+# checks that user input is an integer >= 0 for Daily Double wagers
 def inputValidation(value):
     try:
         if int(value)>=0:
@@ -70,9 +71,12 @@ def instructions():
 def getSeason(): # use web scraping to return number of games in the season requested
     url = 'http://j-archive.com/listseasons.php'
     driver.get(url)
+
+    # find element that determines the number of seasons
     seasons = driver.find_element_by_xpath("//div[@id='content']/table/tbody/tr[2]/td/a")
 
-    numSeasons = seasons.text.split(' ',1)[1] # hard coded right now but we will eventually find this value
+    # remove string 'Season" and give only number
+    numSeasons = seasons.text.split(' ',1)[1]
     numSeasons = int(numSeasons)
 
     # welcome message to display
@@ -176,20 +180,21 @@ def startGame(game,numGame,season): # we will have a 'your game is ready' screen
             if text:
                 amounts.append(text.group(1))
             try:
-                try:
+                try: # first try clicking to trigger the correct response
                     item.click()
                     answer_elem = driver.find_element_by_class_name('correct_response')
                     answers.append(answer_elem.text)
                     item.click()
-                except:
+                except: # if this does not work then hover to trigger the correct response
                     hover = ActionChains(driver).move_to_element_with_offset(item,0,0)
                     hover.perform()
                     answer_elem = driver.find_element_by_class_name('correct_response')
                     answers.append(answer_elem.text)
             except:
-                answers.append('???')
+                answers.append('???') # lets us know there is no answer for that question
             index += 1
         else:
+            # lets program know there is no valid data found for these clues, answers, and amounts
             clues.append('???')
             answers.append('???')
             amounts.append('???')
@@ -259,8 +264,10 @@ def jeopardy(score,rNum,df): #df as argument, parameter for the round
     layout = [
         [
             sg.Text(title,size=(21,1),font=('Helvetica',20,'bold'),text_color='white'),
-            sg.Text(f'Score: {score}',size=(50,1),font=('Helvetica',20,'bold'),
-            text_color='white',justification='center',key='score')
+            sg.Text(f'Score: {score}',size=(35,1),font=('Helvetica',20,'bold'),
+            text_color='white',justification='center',key='score'),
+            sg.Button('Next Round',size=(15,1),button_color=('White','Dark Blue'),
+            font=('Helvetica',20,'bold'))
         ]
     ]
     categories = [
@@ -304,6 +311,13 @@ def jeopardy(score,rNum,df): #df as argument, parameter for the round
             elif counter==60:
                 final = True
                 break
+        elif event == 'Next Round':
+            if(rNum>1):
+                window.close()
+                finalJeopardy(score,df)
+            else:
+                window.close()
+                halftime(score,df)
         elif event == sg.WIN_CLOSED:
             break
     if half:
@@ -565,11 +579,15 @@ def finalJeopardy(score,df):
     category = df.iloc[60]['Category']
     answer = df.iloc[60]['Answer']
     wager = finalWager(score,category)
-    clock = 45
+    clock = 45 # give the user 45 seconds to answer the question
     layout = [
         [
             sg.Text(f'Timer: {clock} seconds',size=(40,1),font=gameFont,
             justification='center',key='timer')
+        ],
+        [
+            sg.Text(f'{category}',size=(40,int(len(category)/40)+1),font=gameFont,
+            justification='center',text_color=('yellow'))
         ],
         [
             sg.Text(clue,size=(40,(int)(len(clue)/40)+1),font=gameFont,

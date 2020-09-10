@@ -1,0 +1,3 @@
+add category to final jeopardy
+
+add a skip round button
