@@ -73,7 +73,7 @@ def getSeason(): # use web scraping to return number of games in the season requ
     driver.get(url)
 
     # find element that determines the number of seasons
-    seasons = driver.find_element_by_xpath("//div[@id='content']/table/tbody/tr[2]/td/a")
+    seasons = driver.find_element_by_xpath("//div[@id='content']/table/tbody/tr[1]/td/a")
 
     # remove string 'Season" and give only number
     numSeasons = seasons.text.split(' ',1)[1]
