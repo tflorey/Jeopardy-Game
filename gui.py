@@ -16,7 +16,7 @@ pd.set_option('display.max_colwidth', -1)'''
 options = Options()
 options.headless = True
 options.add_argument("--window-size=1920,1200")
-driver = webdriver.Chrome(options=options)
+driver = webdriver.Chrome(ChromeDriverManager().install(),options=options,)
 
 # determines all fonts in the game (apart from jeopardy board which is pre set)
 gameFont = ('Verdana',22)
