@@ -72,12 +72,20 @@ def getSeason(): # use web scraping to return number of games in the season requ
     url = 'http://j-archive.com/listseasons.php'
     driver.get(url)
 
-    # find element that determines the number of seasons
-    seasons = driver.find_element_by_xpath("//div[@id='content']/table/tbody/tr[1]/td/a")
+    # try up to 5 times in case of non numerical season
+    for i in range(1, 6):
+        # find element that determines the number of seasons
+        seasons = driver.find_element_by_xpath(f"//div[@id='content']/table/tbody/tr[{i}]/td/a")
 
-    # remove string 'Season" and give only number
-    numSeasons = seasons.text.split(' ',1)[1]
-    numSeasons = int(numSeasons)
+        # remove string 'Season' and give only number
+        numSeasons = seasons.text.split(' ',1)[1]
+
+        # in case not a number season but special series
+        try:
+            numSeasons = int(numSeasons)
+            break
+        except ValueError:
+            continue
 
     # welcome message to display
     welcome = ("Welcome to Jeopardy! We will prompt you for a season and a game from "
